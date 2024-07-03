@@ -14,8 +14,8 @@ class View(ft.UserControl):
         # graphical elements
         self._title = None
         self.ddyear = None
-        self.ddshape = None
-        self.btn_graph = None
+        self.ddstate= None
+        self.btn_analizza = None
         self.txt_result = None
         self.txt_container = None
 
@@ -25,37 +25,44 @@ class View(ft.UserControl):
 
 
     def load_interface(self):
+
         # title
-        self._title = ft.Text("Lab13 - Ufo sighting", color="blue", size=24)
+        self._title = ft.Text("Ufo sighting", color="blue", size=24)
         self._page.controls.append(self._title)
 
         #ROW with some controls
-        self.ddyear = ft.Dropdown(label="Anno", on_change=self._controller.fillddShape)
-        self.ddshape = ft.Dropdown(label="Shape")
+        self.ddyear = ft.Dropdown(label="Anno", on_change=self._controller.handle_graph)
+        self.ddstate = ft.Dropdown(label="State")
 
 
         # button for the "creat graph" reply
-        self.btn_graph = ft.ElevatedButton(text="Crea Grafo", on_click=self._controller.handle_graph)
-        row1 = ft.Row([self.ddyear,self.ddshape, self.btn_graph],
+
+        row1 = ft.Row([self.ddyear,self.ddstate],
                       alignment=ft.MainAxisAlignment.CENTER)
         self._page.controls.append(row1)
 
-        self._controller.fillDD()
+        self.btn_analizza = ft.ElevatedButton(text="Analizza", on_click=self._controller.handle_analizza)
 
+        row2 = ft.Row([self.btn_analizza],
+                      alignment=ft.MainAxisAlignment.CENTER)
+        self._page.controls.append(row2)
         # List View where the reply is printed
         self.txt_result = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
         self._page.controls.append(self.txt_result)
-        self._page.update()
 
-        self.btn_path = ft.ElevatedButton(text="Calcola percorso", on_click=self._controller.handle_path)
+        self.btn_path = ft.ElevatedButton(text="Sequenza di avvistamenti", on_click=self._controller.handle_path)
 
-        row2 = ft.Row([self.btn_path],
+        row3 = ft.Row([self.btn_path],
                       alignment=ft.MainAxisAlignment.CENTER)
-        self._page.controls.append(row2)
+        self._page.controls.append(row3)
 
         self.txtOut2 = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
         self._page.controls.append(self.txtOut2)
         self._page.update()
+        self._controller.filldd()
+        self._page.update()
+
+
     @property
     def controller(self):
         return self._controller

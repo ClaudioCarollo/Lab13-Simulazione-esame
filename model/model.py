@@ -11,67 +11,59 @@ class Model:
         self._bestComp = None
         self._bestdTot = None
         self.idMap = {}
-        self.grafo = nx.Graph()
+        self.grafo = nx.DiGraph()
 
     def getAllYears(self):
+        mappa = {}
         anni = DAO.getAllYears()
-        return anni
+        for a in anni:
+            mappa[a] = DAO.getAllNumber(a)
+        return mappa
 
-    def getAllShapes(self, year):
-        forme = DAO.getAllShapes(year)
-        return forme
 
-    def buildGraph(self, shape, year):
-        nodi = DAO.getAllStates()
+    def buildGraph(self, year):
+        self.grafo.clear()
+        nodi = DAO.getAllNodes(year)
         self.grafo.add_nodes_from(nodi)
-        for n in self.grafo.nodes:
-            self.idMap[n.id] = n
-        connessioni = DAO.getAllConnessioni(self.idMap)
+        stati = DAO.getAllStates()
+        for n in stati:
+            self.idMap[n.id.lower()] = n
+        connessioni = DAO.getAllConnessioni(self.idMap, year)
         for c in connessioni:
-            self.grafo.add_edge(c.stato1, c.stato2, weight = 0)
-        for n1 in self.grafo.nodes:
-            for n2 in self.grafo.nodes:
-                if self.grafo.has_edge(n1, n2):
-                    peso = DAO.getAllPesi(n1.id, n2.id, shape, year)
-                    self.grafo[n1][n2]["weight"] = peso
+            self.grafo.add_edge(c.stato1, c.stato2)
 
-    def getPath(self):
+
+    def getComponenteConnessa(self, nodo):
+        componente = nx.bfs_tree(self.grafo, nodo)
+        return componente
+
+    def getPath(self, n):
         # caching con variabili della classe (percorso migliore e peso maggiore)
         self._bestComp = []
         self._bestdTot = 0
         # inizializzo il parziale con il nodo iniziale
-        parziale = []
-
-        for a in self.grafo.nodes:
+        parziale = [n]
+        successori = self.grafo.successors(n)
+        for a in successori:
             if a not in parziale:
                 parziale.append(a)
                 self._ricorsionev2(parziale)
                 parziale.pop()  # rimuovo l'ultimo elemento aggiunto: backtracking
-        return self._bestComp, self._bestdTot
+        return self._bestComp
 
     def _ricorsionev2(self, parziale):
         # verifico se soluzione è migliore di quella salvata in cache
 
-        if self.getScore(parziale) > self._bestdTot:
+        if len(parziale) > self._bestdTot:
             # se lo è aggiorno i valori migliori
             self._bestComp = copy.deepcopy(parziale)
-            self._bestdTot = self.getScore(parziale)
+            self._bestdTot = len(parziale)
+            return
         # verifico se posso aggiungere un altro elemento
-        comp = self.grafo.neighbors(parziale[-1])
-        for a in comp:
+        successori = self.grafo.successors(parziale[-1])
+        for a in successori:
             if a not in parziale:
-                if len(parziale)<2:
-                    parziale.append(a)
-                    self._ricorsionev2(parziale)
-                    parziale.pop()
-                elif self.grafo[parziale[-1]][a]["weight"] > self.grafo[parziale[-2]][parziale[-1]]["weight"]:
-                    parziale.append(a)
-                    self._ricorsionev2(parziale)
-                    parziale.pop()  # rimuovo l'ultimo elemento aggiunto: backtracking
+                parziale.append(a)
+                self._ricorsionev2(parziale)
+                parziale.pop()  # rimuovo l'ultimo elemento aggiunto: backtracking
 
-
-    def getScore(self, list):
-        score = 0
-        for i in range(0, len(list)-1):
-            score += distance.geodesic((list[i].Lat, list[i].Lng), (list[i+1].Lat, list[i+1].Lng)).km
-        return score

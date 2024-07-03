@@ -22,35 +22,36 @@ class DAO():
         return result
 
     @staticmethod
-    def getAllShapes(year):
+    def getAllNumber(year):
         cnx = DBConnect.get_connection()
-        result = []
+        result = 0
         if cnx is None:
             print("Connessione fallita")
         else:
             cursor = cnx.cursor(dictionary=True)
-            query = """select distinct s.shape as shape
-                        from sighting s 
-                        where year(s.`datetime`) = %s
-                        order by s.shape """
+            query = """select count(*) as numero
+from sighting s 
+where s.country ='us' and year(s.`datetime`) = %s  """
             cursor.execute(query, (year, ))
             for row in cursor:
-                result.append(row["shape"])
+                result = row["numero"]
             cursor.close()
             cnx.close()
         return result
 
     @staticmethod
-    def getAllStates():
+    def getAllNodes(anno):
         cnx = DBConnect.get_connection()
         result = []
         if cnx is None:
             print("Connessione fallita")
         else:
             cursor = cnx.cursor(dictionary=True)
-            query = """select * 
-                        from state s"""
-            cursor.execute(query)
+            query = """select distinct s2.id as id, s2.Name as Name, s2.Capital as Capital, s2.Lat as Lat, s2.Lng as Lng, s2.Area as Area, s2.Population as Population, s2.Neighbors as Neighbors
+from sighting s, state s2 
+where s.state = s2.id and year (s.`datetime`) = %s
+order by s2.id """
+            cursor.execute(query, (anno,))
             for row in cursor:
                 result.append(State(**row))
             cursor.close()
@@ -75,16 +76,17 @@ class DAO():
         return result
 
     @staticmethod
-    def getAllConnessioni(idMap):
+    def getAllConnessioni(idMap, year):
         conn = DBConnect.get_connection()
         result = []
         cursor = conn.cursor(dictionary=True)
-        query = """SELECT n.state1 AS s1, n.state2 AS s2
-                           FROM neighbor n
-                           WHERE n.state1 < n.state2"""
-        cursor.execute(query)
+        query = """select distinct s1.state as state1, s2.state as state2
+from sighting s1, sighting s2
+where year(s2.`datetime`) = %s and year(s1.`datetime`) = %s and s1.`datetime`<s2.`datetime` and s1.state != s2.state
+group by s1.state, s2.state"""
+        cursor.execute(query, (year, year))
         for row in cursor:
-            result.append(Neighbor(idMap[row["s1"]], idMap[row["s2"]]))
+            result.append(Neighbor(idMap[row["state1"]], idMap[row["state2"]]))
         cursor.close()
         conn.close()
         return result
