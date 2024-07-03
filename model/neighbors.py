@@ -2,8 +2,7 @@ from dataclasses import dataclass
 
 from model.state import State
 
-
 @dataclass
-class Neighbors:
-    stato1: State
-    stato2: State
+class Neighbor:
+    state1: State
+    state2: State

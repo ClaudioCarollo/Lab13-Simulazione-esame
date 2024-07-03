@@ -1,31 +1,9 @@
 from database.DB_connect import DBConnect
-from model.neighbors import Neighbors
+from model.neighbors import Neighbor
 from model.state import State
 
 
 class DAO():
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def getShapes(year):
-        cnx = DBConnect.get_connection()
-        result = []
-        if cnx is None:
-            print("Connessione fallita")
-        else:
-            cursor = cnx.cursor(dictionary=True)
-            query = """select distinct s.shape as shape
-                        from sighting s
-                        where year(s.`datetime`) = %s
-                        order by s.shape"""
-            cursor.execute(query, (year,))
-            for row in cursor:
-                result.append(row["shape"])
-            cursor.close()
-            cnx.close()
-        return result
-
     @staticmethod
     def getAllStates():
         cnx = DBConnect.get_connection()
@@ -34,8 +12,8 @@ class DAO():
             print("Connessione fallita")
         else:
             cursor = cnx.cursor(dictionary=True)
-            query = """select * 
-                        from state s"""
+            query = """select distinct * 
+                            from state s"""
             cursor.execute(query)
             for row in cursor:
                 result.append(State(**row))
@@ -44,44 +22,46 @@ class DAO():
         return result
 
     @staticmethod
-    def getAllEdges(idmap):
+    def getAllConnections(idmap):
         cnx = DBConnect.get_connection()
         result = []
         if cnx is None:
             print("Connessione fallita")
         else:
             cursor = cnx.cursor(dictionary=True)
-            query = """select n.state1 as stato1, n.state2 as stato2
-                        from neighbor n"""
+            query = """select n.state1 as stato1, n.state2 as stato2 
+                        from neighbor n
+                        where n.state1 < n.state2 """
             cursor.execute(query)
             for row in cursor:
-                result.append(Neighbors(idmap[row["stato1"]], idmap[row["stato2"]]))
+                result.append(Neighbor(idmap[row["stato1"]], idmap[row["stato2"]]))
             cursor.close()
             cnx.close()
         return result
 
     @staticmethod
-    def getPeso(shape, year, state1, state2):
+    def getPeso(s1, s2, anno, xg):
         cnx = DBConnect.get_connection()
         result = 0
         if cnx is None:
             print("Connessione fallita")
         else:
             cursor = cnx.cursor(dictionary=True)
-            query = """select  count(*) as peso
-                        from neighbor n, sighting s1, sighting s2 
-                        where n.state1 = upper(s1.state)
-                        and n.state2 = upper(s2.state) 
-                        and s1.shape = s2.shape
-                        and year(s2.`datetime`) = year(s1.`datetime`) 
-                        and s1.shape = %s
-                        and year(s1.`datetime`) = %s
-                        and n.state1 = %s
-                        and n.state2 = %s """
-            cursor.execute(query, (shape, year, state1, state2))
+            query = """ SELECT (count(distinct s1.id)+ count(distinct s2.id)) as peso 
+                        FROM 
+                            neighbor n, sighting s1, sighting s2
+                        WHERE 
+                            n.state1 = s1.state
+                            and n.state2 = s2.state
+                            and YEAR(s1.datetime) = %s
+                            AND YEAR(s2.datetime) = %s
+                            AND ABS(DATEDIFF(s1.datetime, s2.datetime)) <= %s
+                            and s1.state in (%s, %s)
+                            and s2.state in (%s, %s)
+                            and s1.state< s2.state"""
+            cursor.execute(query, (anno, anno, xg, s1, s2, s2, s1))
             for row in cursor:
                 result = row["peso"]
             cursor.close()
             cnx.close()
         return result
-

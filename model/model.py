@@ -6,24 +6,28 @@ class Model:
         self.grafo = nx.Graph()
         self.idMap = {}
 
-    def getShapes(self, year):
-        forme = DAO.getShapes(year)
-        return forme
 
-    def buildGraph(self, shape, year):
+
+    def buildGraph(self, anno, xg):
         nodi = DAO.getAllStates()
         self.grafo.add_nodes_from(nodi)
-        for n in self.grafo.nodes:
+        for n in nodi:
             self.idMap[n.id] = n
-        vicini = DAO.getAllEdges(self.idMap)
-        for v in vicini:
-            self.grafo.add_edge(v.stato1, v.stato2)
+        archi = DAO.getAllConnections(self.idMap)
+        for c in archi:
+            self.grafo.add_edge(c.state1, c.state2, weight=0)
         for n1 in self.grafo.nodes:
             for n2 in self.grafo.nodes:
                 if self.grafo.has_edge(n1, n2):
-                    peso = DAO.getPeso(shape, year, n1.id, n2.id)
+                    peso = DAO.getPeso(n1.id, n2.id, anno, xg)
                     self.grafo[n1][n2]["weight"] = peso
 
-
-
-
+    def getPesiAdiacenti(self):
+        mappa = {}
+        for n in self.grafo.nodes:
+            peso = 0
+            vicini = self.grafo.neighbors(n)
+            for n1 in vicini:
+                peso+=self.grafo[n][n1]["weight"]
+            mappa[n.id] = peso
+        return mappa

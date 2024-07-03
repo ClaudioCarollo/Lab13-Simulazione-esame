@@ -14,8 +14,7 @@ class View(ft.UserControl):
         # graphical elements
         self._title = None
         self.txtInYear = None
-        self.btn_year = None
-        self.ddshape = None
+        self.txtxG = None
         self.btn_graph = None
         self.txt_result = None
         self.txt_container = None
@@ -30,14 +29,14 @@ class View(ft.UserControl):
 
         #ROW with some controls
         self.txtInYear = ft.TextField(label="Anno")
-        self.btn_year = ft.ElevatedButton(text="Seleziona Anno", on_click=self._controller.handle_anno)
-        row1 = ft.Row([self.txtInYear, self.btn_year],
+
+        row1 = ft.Row([self.txtInYear],
                       alignment=ft.MainAxisAlignment.CENTER)
         self._page.controls.append(row1)
 
-        self.ddshape = ft.Dropdown(label="Shape")
+        self.txtxG = ft.TextField(label="xG")
         self.btn_graph = ft.ElevatedButton(text="Crea Grafo", on_click=self._controller.handle_graph)
-        row2 = ft.Row([self.ddshape, self.btn_graph],
+        row2 = ft.Row([self.txtxG, self.btn_graph],
                       alignment=ft.MainAxisAlignment.CENTER)
         self._page.controls.append(row2)
 
